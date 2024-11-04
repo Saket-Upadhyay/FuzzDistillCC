@@ -3,4 +3,4 @@ project(FuzzPiler)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(FuzzPiler main.cpp)
+add_executable(FuzzPiler src/main.cpp)
