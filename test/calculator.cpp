@@ -14,13 +14,13 @@ void displayMenu() {
 
 int main() {
     double num1, num2;
-    int choice;
+    int *choice = new int;
 
     while (true) {
         displayMenu();
-        cin >> choice;
+        cin >> *choice;
 
-        if (choice == 5) {
+        if (*choice == 5) {
             cout << "Exiting the program." << endl;
             break;
         }
@@ -28,7 +28,7 @@ int main() {
         cout << "Enter two numbers: ";
         cin >> num1 >> num2;
 
-        switch (choice) {
+        switch (*choice) {
         case 1:
             cout << "Result: " << num1 + num2 << endl;
             break;
@@ -50,6 +50,8 @@ int main() {
         }
         cout << endl;
     }
+
+    delete choice;
 
     return 0;
 }
