@@ -21,13 +21,14 @@ private:
   int static_allocations;  // How many times the block was executed
   int dynamic_allocations; // Number of errors encountered
   int dynamic_memops;
+  int is_vulnerable;
 
 public:
   // Constructor to initialize the object
   explicit BasicBlockInfo(int id)
       : block_id(id), block_name("NF"), instruction_count(0), in_degree(0),
         out_degree(0), static_allocations(0), dynamic_allocations(0),
-        dynamic_memops(0) {}
+        dynamic_memops(0), is_vulnerable(0) {}
 
   // Getters for the class attributes (optional)
   [[nodiscard]] size_t getBlockId() const { return block_id; }
@@ -47,6 +48,14 @@ public:
 
   void setDynamicMemops(int count) { dynamic_memops = count; }
 
+  void setVulnerability(bool isvuln) {
+    if (isvuln) {
+      this->is_vulnerable = 1;
+    } else {
+      this->is_vulnerable = 0;
+    }
+  }
+
   // getCSVinfo
   [[nodiscard]] std::string toCSV() const {
     return std::to_string(block_id) + ";" + block_name + ";" +
@@ -54,7 +63,8 @@ public:
            ";" + std::to_string(out_degree) + ";" +
            std::to_string(static_allocations) + ";" +
            std::to_string(dynamic_allocations) + ";" +
-           std::to_string(dynamic_memops);
+           std::to_string(dynamic_memops) + ";" +
+          std::to_string(is_vulnerable);
   }
 };
 
@@ -173,7 +183,7 @@ void save_to_csv(const std::string &filename,
     return; // Exit if the file couldn't be opened
   }
   csvFile << "Block ID;Block Name;Instructions;In-degree;Out-degree;Static "
-             "Allocations;Dynamic Allocations;MemOps"
+             "Allocations;Dynamic Allocations;MemOps;VULNERABLE"
           << std::endl;
 
   // Write data to the CSV file
