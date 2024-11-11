@@ -42,7 +42,9 @@ public:
   void setBlockName(std::string name) { block_name = std::move(name); }
 
   void setStaticAllocations(int count) { static_allocations = count; }
+
   void setDynamicAllocations(int count) { dynamic_allocations = count; }
+
   void setDynamicMemops(int count) { dynamic_memops = count; }
 
   // getCSVinfo
@@ -243,24 +245,26 @@ void count_allocations_in_basic_block(llvm::BasicBlock *BB,
       llvm::Function *calledFunc = callInst->getCalledFunction();
       // Check if the function being called is malloc, calloc, or any other heap
       // allocation
-      std::string demangled_func_name =
-          demangle_name_or_get_original_back(calledFunc->getName().str());
-      printLLVMErrs(demangled_func_name);
-      if (calledFunc && (demangled_func_name.find("malloc") == 0 ||
-                         demangled_func_name.find("calloc") == 0 ||
-                         demangled_func_name.find("realloc") == 0 ||
-                         calledFunc->getName().str() == "free" ||
-                         demangled_func_name.find("operator delete") == 0 ||
-                         demangled_func_name.find("operator new[]") == 0 ||
-                         demangled_func_name.find("operator new") == 0)) {
-        dynamicAllocCount++; // Increment heap allocation count
-      }
-      if (calledFunc && (demangled_func_name.find("memmove") == 0 ||
-                         demangled_func_name.find("memcpy") == 0 ||
-                         demangled_func_name.find("memset") == 0 ||
-                         demangled_func_name.find("memcmp") == 0 ||
-                         demangled_func_name.find("mmap") == 0)) {
-        dynamicMemOpsCount++;
+      if (calledFunc) {
+        std::string demangled_func_name =
+            demangle_name_or_get_original_back(calledFunc->getName().str());
+        printLLVMErrs(demangled_func_name);
+        if ((demangled_func_name.find("malloc") == 0 ||
+             demangled_func_name.find("calloc") == 0 ||
+             demangled_func_name.find("realloc") == 0 ||
+             calledFunc->getName().str() == "free" ||
+             demangled_func_name.find("operator delete") == 0 ||
+             demangled_func_name.find("operator new[]") == 0 ||
+             demangled_func_name.find("operator new") == 0)) {
+          dynamicAllocCount++; // Increment heap allocation count
+        }
+        if ((demangled_func_name.find("memmove") == 0 ||
+             demangled_func_name.find("memcpy") == 0 ||
+             demangled_func_name.find("memset") == 0 ||
+             demangled_func_name.find("memcmp") == 0 ||
+             demangled_func_name.find("mmap") == 0)) {
+          dynamicMemOpsCount++;
+        }
       }
     }
   }
