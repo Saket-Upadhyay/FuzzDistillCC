@@ -17,7 +17,7 @@ namespace llvm {
         llvm::PreservedAnalyses run(llvm::Module &aModule,
                                     llvm::ModuleAnalysisManager &MAM);
 
-        bool runOnModule(llvm::Module &targetModule);
+        bool runOnModule(llvm::Module &targetModule, llvm::ModuleAnalysisManager &MAM);
 
     private:
         static AnalysisKey Key;

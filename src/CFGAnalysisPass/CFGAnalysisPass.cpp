@@ -4,69 +4,13 @@
 
 #include "CFGAnalysisPass.h"
 
+#include "BasicBlockInfo.h"
 #include <cxxabi.h>
 #include <fstream>
 #include <iostream>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Instructions.h>
 #include <utility>
-
-class BasicBlockInfo {
-private:
-  size_t block_id; // Unique identifier for the block
-  std::string block_name;
-  int instruction_count;
-  int in_degree;           // Number of incoming edges
-  int out_degree;          // Number of outgoing edges
-  int static_allocations;  // How many times the block was executed
-  int dynamic_allocations; // Number of errors encountered
-  int dynamic_memops;
-  int is_vulnerable;
-
-public:
-  // Constructor to initialize the object
-  explicit BasicBlockInfo(int id)
-      : block_id(id), block_name("NF"), instruction_count(0), in_degree(0),
-        out_degree(0), static_allocations(0), dynamic_allocations(0),
-        dynamic_memops(0), is_vulnerable(0) {}
-
-  // Getters for the class attributes (optional)
-  [[nodiscard]] size_t getBlockId() const { return block_id; }
-
-  // Setters for the class attributes (optional)
-  void setInDegree(int degree) { in_degree = degree; }
-
-  void setOutDegree(int degree) { out_degree = degree; }
-
-  void setInstructionCount(int count) { instruction_count = count; }
-
-  void setBlockName(std::string name) { block_name = std::move(name); }
-
-  void setStaticAllocations(int count) { static_allocations = count; }
-
-  void setDynamicAllocations(int count) { dynamic_allocations = count; }
-
-  void setDynamicMemops(int count) { dynamic_memops = count; }
-
-  void setVulnerability(bool isvuln) {
-    if (isvuln) {
-      this->is_vulnerable = 1;
-    } else {
-      this->is_vulnerable = 0;
-    }
-  }
-
-  // getCSVinfo
-  [[nodiscard]] std::string toCSV() const {
-    return std::to_string(block_id) + ";" + block_name + ";" +
-           std::to_string(instruction_count) + ";" + std::to_string(in_degree) +
-           ";" + std::to_string(out_degree) + ";" +
-           std::to_string(static_allocations) + ";" +
-           std::to_string(dynamic_allocations) + ";" +
-           std::to_string(dynamic_memops) + ";" +
-          std::to_string(is_vulnerable);
-  }
-};
 
 std::string demangle_name_or_get_original_back(const std::string &mangledName);
 
@@ -84,8 +28,9 @@ void count_allocations_in_basic_block(llvm::BasicBlock *BB,
                                       int &dynamicAllocCount,
                                       int &dynamicMemOpsCount);
 
-bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule) {
-  bool Changed = false;
+bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
+                                        llvm::ModuleAnalysisManager &MAM) {
+  bool Changed = true;
   int instructioncount = 0;
   int functioncount = 0;
   int blockcount = 0;
@@ -94,6 +39,18 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule) {
 
   for (auto &Function : TargetModule) {
     functioncount++;
+    llvm::FunctionAnalysisManager &FAM =
+        MAM.getResult<FunctionAnalysisManagerModuleProxy>(TargetModule)
+            .getManager();
+//LoopInfo &LI = FAM.getResult<LoopAnalysis>(Function);
+//
+//    for (auto loop : LI) {
+//      for (auto loopbbs : loop->getBlocks()) {
+//        errs() << loopbbs->getName().str() << "\n";
+//        // THESE BBS ARE LOOPED
+//      }
+//    }
+
     for (auto &BasicBlock : Function) {
       blockcount++;
       for (auto &Inst : BasicBlock) {
@@ -121,9 +78,15 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule) {
           BasicBlock.getParent()->getName().str());
       temp_block.setBlockName("BB" + std::to_string(blockcount) + "_" +
                               trydemangleBBparent);
+      BasicBlock.setName("BB" + std::to_string(blockcount) + "_" +
+                         std::to_string(id));
+      //      printLLVMErrs(BasicBlock.getName().str());
       blocks.push_back(temp_block);
       instructioncount = 0;
     }
+
+
+
   }
 
   save_to_csv(TargetModule.getName().str() + "_CFGAnalysisPass.csv", blocks);
@@ -133,7 +96,7 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule) {
 llvm::PreservedAnalyses
 llvm::CFGAnalysisPass::run(llvm::Module &AModule,
                            llvm::ModuleAnalysisManager &MAM) {
-  if (runOnModule(AModule)) {
+  if (runOnModule(AModule, MAM)) {
     return llvm::PreservedAnalyses::none();
   }
   return llvm::PreservedAnalyses::all();

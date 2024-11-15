@@ -19,6 +19,7 @@
 
 // Project Imports
 #include "CFGAnalysisPass/CFGAnalysisPass.h"
+#include "LoopFeaturesPass/LoopFeaturesPass.h"
 
 // Aliasing Namespace
 namespace commandline = llvm::cl;
@@ -38,6 +39,8 @@ static commandline::opt<std::string> InputModule{
 static void runCustomPass(llvm::Module &targetModule) {
   llvm::ModulePassManager MPM;
   MPM.addPass(llvm::CFGAnalysisPass());
+//  llvm::FunctionPassManager FPM;
+//  FPM.addPass(llvm::LoopFeaturesPass());
 
   llvm::ModuleAnalysisManager MAM;
   llvm::FunctionAnalysisManager FAM;
@@ -51,6 +54,8 @@ static void runCustomPass(llvm::Module &targetModule) {
   PB.crossRegisterProxies(LAM, FAM, CAM, MAM);
 
   MPM.run(targetModule, MAM);
+
+
 }
 
 /**
