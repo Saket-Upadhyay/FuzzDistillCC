@@ -19,21 +19,26 @@ void printLLVMErrs(llvm::StringRef Msg);
 void save_to_csv(const std::string &filename,
                  std::vector<BasicBlockInfo> &blocks);
 
-int get_in_degree(llvm::BasicBlock *BB);
+uint get_in_degree(llvm::BasicBlock *BB);
 
-int get_out_degree(llvm::BasicBlock *BB);
+uint get_out_degree(llvm::BasicBlock *BB);
+
+uint get_conditional_branches(llvm::BasicBlock *BB);
+uint get_unconditional_branches(llvm::BasicBlock *BB);
+uint get_direct_calls(llvm::BasicBlock *BB);
+uint get_indirect_calls(llvm::BasicBlock *BB);
 
 void count_allocations_in_basic_block(llvm::BasicBlock *BB,
-                                      int &staticAllocCount,
-                                      int &dynamicAllocCount,
-                                      int &dynamicMemOpsCount);
+                                      uint &staticAllocCount,
+                                      uint &dynamicAllocCount,
+                                      uint &dynamicMemOpsCount);
 
 bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
                                         llvm::ModuleAnalysisManager &MAM) {
   bool Changed = true;
-  int instructioncount = 0;
-  int functioncount = 0;
-  int blockcount = 0;
+  uint instructioncount = 0;
+  uint functioncount = 0;
+  uint blockcount = 0;
 
   std::vector<BasicBlockInfo> blocks;
 
@@ -42,14 +47,14 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
     llvm::FunctionAnalysisManager &FAM =
         MAM.getResult<FunctionAnalysisManagerModuleProxy>(TargetModule)
             .getManager();
-//LoopInfo &LI = FAM.getResult<LoopAnalysis>(Function);
-//
-//    for (auto loop : LI) {
-//      for (auto loopbbs : loop->getBlocks()) {
-//        errs() << loopbbs->getName().str() << "\n";
-//        // THESE BBS ARE LOOPED
-//      }
-//    }
+    // LoopInfo &LI = FAM.getResult<LoopAnalysis>(Function);
+    //
+    //     for (auto loop : LI) {
+    //       for (auto loopbbs : loop->getBlocks()) {
+    //         errs() << loopbbs->getName().str() << "\n";
+    //         // THESE BBS ARE LOOPED
+    //       }
+    //     }
 
     for (auto &BasicBlock : Function) {
       blockcount++;
@@ -57,22 +62,24 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
         instructioncount++;
       }
 
-      int indeg = get_in_degree(&BasicBlock);
-      int outdeg = get_out_degree(&BasicBlock);
       // Count static and dynamic allocations in BB1
-      int staticAllocCount = 0;
-      int dynamicAllocCount = 0;
-      int dynamicMemOps = 0;
+      uint staticAllocCount = 0;
+      uint dynamicAllocCount = 0;
+      uint dynamicMemOps = 0;
       count_allocations_in_basic_block(&BasicBlock, staticAllocCount,
                                        dynamicAllocCount, dynamicMemOps);
 
       size_t id = reinterpret_cast<size_t>(&BasicBlock);
       BasicBlockInfo temp_block(id);
       temp_block.setInstructionCount(instructioncount);
-      temp_block.setInDegree(indeg);
-      temp_block.setOutDegree(outdeg);
+      temp_block.setInDegree(get_in_degree(&BasicBlock));
+      temp_block.setOutDegree(get_out_degree(&BasicBlock));
       temp_block.setStaticAllocations(staticAllocCount);
       temp_block.setDynamicAllocations(dynamicAllocCount);
+      temp_block.setUncondBranches(get_conditional_branches(&BasicBlock));
+      temp_block.setUncondBranches(get_unconditional_branches(&BasicBlock));
+      temp_block.setIndirentCalls(get_indirect_calls(&BasicBlock));
+      temp_block.setDirectCalls(get_indirect_calls(&BasicBlock));
       temp_block.setDynamicMemops(dynamicMemOps);
       std::string trydemangleBBparent = demangle_name_or_get_original_back(
           BasicBlock.getParent()->getName().str());
@@ -84,9 +91,6 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
       blocks.push_back(temp_block);
       instructioncount = 0;
     }
-
-
-
   }
 
   save_to_csv(TargetModule.getName().str() + "_CFGAnalysisPass.csv", blocks);
@@ -146,7 +150,7 @@ void save_to_csv(const std::string &filename,
     return; // Exit if the file couldn't be opened
   }
   csvFile << "Block ID;Block Name;Instructions;In-degree;Out-degree;Static "
-             "Allocations;Dynamic Allocations;MemOps;VULNERABLE"
+             "Allocations;Dynamic Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;InDirectCalls;VULNERABLE"
           << std::endl;
 
   // Write data to the CSV file
@@ -164,8 +168,8 @@ void printLLVMErrs(llvm::StringRef Msg) { llvm::errs() << Msg << "\n"; }
 
 // Basic Block Information Helpers
 
-int get_in_degree(llvm::BasicBlock *BB) {
-  int inDegree = 0;
+uint get_in_degree(llvm::BasicBlock *BB) {
+  uint inDegree = 0;
 
   // Iterate over all the functions in the module
   for (auto &F : *BB->getParent()->getParent()) {
@@ -188,8 +192,8 @@ int get_in_degree(llvm::BasicBlock *BB) {
   return inDegree;
 }
 
-int get_out_degree(llvm::BasicBlock *BB) {
-  int outDegree = 0;
+uint get_out_degree(llvm::BasicBlock *BB) {
+  uint outDegree = 0;
 
   // Get the terminator instruction for the basic block
   llvm::Instruction *termInst = BB->getTerminator();
@@ -203,9 +207,9 @@ int get_out_degree(llvm::BasicBlock *BB) {
 }
 
 void count_allocations_in_basic_block(llvm::BasicBlock *BB,
-                                      int &staticAllocCount,
-                                      int &dynamicAllocCount,
-                                      int &dynamicMemOpsCount) {
+                                      uint &staticAllocCount,
+                                      uint &dynamicAllocCount,
+                                      uint &dynamicMemOpsCount) {
   // Iterate over all instructions in the basic block
   for (auto &I : *BB) {
     // Check for alloca instructions (stack allocations)
@@ -214,7 +218,7 @@ void count_allocations_in_basic_block(llvm::BasicBlock *BB,
     }
     // Check for malloc/calloc or other allocation calls (heap allocations)
     else if (isa<llvm::CallInst>(I)) {
-      llvm::CallInst *callInst = cast<llvm::CallInst>(&I);
+      auto *callInst = cast<llvm::CallInst>(&I);
       llvm::Function *calledFunc = callInst->getCalledFunction();
       // Check if the function being called is malloc, calloc, or any other heap
       // allocation
@@ -241,4 +245,64 @@ void count_allocations_in_basic_block(llvm::BasicBlock *BB,
       }
     }
   }
+}
+
+uint get_conditional_branches(llvm::BasicBlock *BB) {
+  uint cond_branchcounter = 0;
+  for (auto &I : *BB) {
+    if (llvm::isa<llvm::BranchInst>(I)) {
+      auto *BI = cast<llvm::BranchInst>(&I);
+      if (BI->isConditional()) {
+        cond_branchcounter += BI->getNumSuccessors();
+      }
+    }
+
+    else if (llvm::isa<llvm::SwitchInst>(I)) {
+      auto *SI = cast<llvm::SwitchInst>(&I);
+      cond_branchcounter += SI->getNumSuccessors();
+    }
+  }
+  return cond_branchcounter;
+}
+
+uint get_unconditional_branches(llvm::BasicBlock *BB) {
+  uint uncond_branchcounter = 0;
+  for (auto &I : *BB) {
+    if (llvm::isa<llvm::BranchInst>(I)) {
+      auto *BI = cast<llvm::BranchInst>(&I);
+      if (BI->isUnconditional()) {
+        uncond_branchcounter += BI->getNumSuccessors();
+      }
+    }
+  }
+  return uncond_branchcounter;
+}
+
+uint get_direct_calls(llvm::BasicBlock *BB)
+{
+  uint dcalls=0;
+  for (auto &I : *BB) {
+
+    if (llvm::isa<llvm::CallInst>(I)) {
+      auto *CI = cast<llvm::CallInst>(&I);
+      if (!CI->isIndirectCall()) {
+        dcalls++;
+      }
+    }
+  }
+  return dcalls;
+}
+
+uint get_indirect_calls(llvm::BasicBlock *BB)
+{
+  uint indcalls =0;
+  for (auto &I : *BB) {
+    if (llvm::isa<llvm::CallInst>(I)) {
+      auto *CI = cast<llvm::CallInst>(&I);
+      if (CI->isIndirectCall()) {
+        indcalls++;
+      }
+    }
+  }
+  return indcalls;
 }
