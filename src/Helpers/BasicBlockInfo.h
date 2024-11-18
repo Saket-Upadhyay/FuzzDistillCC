@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <string>
 
+typedef unsigned int uint;
+
 class BasicBlockInfo {
 private:
   std::size_t block_id; // Unique identifier for the block

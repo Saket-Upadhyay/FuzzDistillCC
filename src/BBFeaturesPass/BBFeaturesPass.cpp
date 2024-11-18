@@ -2,22 +2,12 @@
 // Created by drdope on 11/6/24.
 //
 
-#include "CFGAnalysisPass.h"
+#include "BBFeaturesPass.h"
 
 #include "BasicBlockInfo.h"
-#include <cxxabi.h>
-#include <fstream>
-#include <iostream>
+#include <fuzzpiler_utilities.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Instructions.h>
-#include <utility>
-
-std::string demangle_name_or_get_original_back(const std::string &mangledName);
-
-void printLLVMErrs(llvm::StringRef Msg);
-
-void save_to_csv(const std::string &filename,
-                 std::vector<BasicBlockInfo> &blocks);
 
 uint get_in_degree(llvm::BasicBlock *BB);
 
@@ -33,10 +23,9 @@ void count_allocations_in_basic_block(llvm::BasicBlock *BB,
                                       uint &dynamicAllocCount,
                                       uint &dynamicMemOpsCount);
 
-bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
-                                        llvm::ModuleAnalysisManager &MAM) {
+bool llvm::BBFeaturesPass::runOnModule(llvm::Module &TargetModule,
+                                       llvm::ModuleAnalysisManager &MAM) {
   bool Changed = true;
-  uint instructioncount = 0;
   uint functioncount = 0;
   uint blockcount = 0;
 
@@ -44,23 +33,9 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
 
   for (auto &Function : TargetModule) {
     functioncount++;
-    llvm::FunctionAnalysisManager &FAM =
-        MAM.getResult<FunctionAnalysisManagerModuleProxy>(TargetModule)
-            .getManager();
-    // LoopInfo &LI = FAM.getResult<LoopAnalysis>(Function);
-    //
-    //     for (auto loop : LI) {
-    //       for (auto loopbbs : loop->getBlocks()) {
-    //         errs() << loopbbs->getName().str() << "\n";
-    //         // THESE BBS ARE LOOPED
-    //       }
-    //     }
 
     for (auto &BasicBlock : Function) {
       blockcount++;
-      for (auto &Inst : BasicBlock) {
-        instructioncount++;
-      }
 
       // Count static and dynamic allocations in BB1
       uint staticAllocCount = 0;
@@ -71,16 +46,17 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
 
       size_t id = reinterpret_cast<size_t>(&BasicBlock);
       BasicBlockInfo temp_block(id);
-      temp_block.setInstructionCount(instructioncount);
+      temp_block.setInstructionCount([&BasicBlock](int instructioncount = 0) {for (auto &Inst : BasicBlock) {instructioncount++;}return instructioncount;}());
       temp_block.setInDegree(get_in_degree(&BasicBlock));
       temp_block.setOutDegree(get_out_degree(&BasicBlock));
       temp_block.setStaticAllocations(staticAllocCount);
       temp_block.setDynamicAllocations(dynamicAllocCount);
+      temp_block.setDynamicMemops(dynamicMemOps);
       temp_block.setUncondBranches(get_conditional_branches(&BasicBlock));
       temp_block.setUncondBranches(get_unconditional_branches(&BasicBlock));
       temp_block.setIndirentCalls(get_indirect_calls(&BasicBlock));
-      temp_block.setDirectCalls(get_indirect_calls(&BasicBlock));
-      temp_block.setDynamicMemops(dynamicMemOps);
+      temp_block.setDirectCalls(get_direct_calls(&BasicBlock));
+
       std::string trydemangleBBparent = demangle_name_or_get_original_back(
           BasicBlock.getParent()->getName().str());
       temp_block.setBlockName("BB" + std::to_string(blockcount) + "_" +
@@ -89,17 +65,16 @@ bool llvm::CFGAnalysisPass::runOnModule(llvm::Module &TargetModule,
                          std::to_string(id));
       //      printLLVMErrs(BasicBlock.getName().str());
       blocks.push_back(temp_block);
-      instructioncount = 0;
     }
   }
 
-  save_to_csv(TargetModule.getName().str() + "_CFGAnalysisPass.csv", blocks);
+  save_to_csv(TargetModule.getName().str() + "_BBFeatures.csv", blocks);
   return Changed;
 }
 
 llvm::PreservedAnalyses
-llvm::CFGAnalysisPass::run(llvm::Module &AModule,
-                           llvm::ModuleAnalysisManager &MAM) {
+llvm::BBFeaturesPass::run(llvm::Module &AModule,
+                          llvm::ModuleAnalysisManager &MAM) {
   if (runOnModule(AModule, MAM)) {
     return llvm::PreservedAnalyses::none();
   }
@@ -108,63 +83,20 @@ llvm::CFGAnalysisPass::run(llvm::Module &AModule,
 
 //// Pass Registration, new PM
 
-llvm::PassPluginLibraryInfo getInstrumentationPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "cfgext", "v0.1", [](llvm::PassBuilder &PB) {
+llvm::PassPluginLibraryInfo getBBFeatuesPluginInfo() {
+  return {LLVM_PLUGIN_API_VERSION, "bbfeaturext", "v0.1",
+          [](llvm::PassBuilder &PB) {
             PB.registerOptimizerLastEPCallback(
                 [](llvm::ModulePassManager &MPM, llvm::OptimizationLevel OL) {
-                  MPM.addPass(llvm::CFGAnalysisPass());
+                  MPM.addPass(llvm::BBFeaturesPass());
                 });
           }};
 }
 
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
-  return getInstrumentationPluginInfo();
+  return getBBFeatuesPluginInfo();
 }
-
-// HELPER FUNCTIONS
-std::string demangle_name_or_get_original_back(const std::string &mangledName) {
-  int status = 0;
-  char *demangled =
-      abi::__cxa_demangle(mangledName.c_str(), nullptr, nullptr, &status);
-  std::string demangledName;
-
-  if (status == 0) {
-    demangledName = std::string(demangled);
-  } else {
-    demangledName = mangledName; // Return mangled name if demangling fails
-  }
-
-  std::free(demangled);
-  return demangledName;
-}
-
-void save_to_csv(const std::string &filename,
-                 std::vector<BasicBlockInfo> &blocks) {
-  // Create and open the CSV file
-  std::ofstream csvFile(filename, std::ios::out | std::ios::app);
-
-  // Check if the file is open
-  if (!csvFile) {
-    std::cerr << "Error opening file!" << std::endl;
-    return; // Exit if the file couldn't be opened
-  }
-  csvFile << "Block ID;Block Name;Instructions;In-degree;Out-degree;Static "
-             "Allocations;Dynamic Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;InDirectCalls;VULNERABLE"
-          << std::endl;
-
-  // Write data to the CSV file
-  for (const auto &block : blocks) {
-    csvFile << block.toCSV() << std::endl;
-  }
-
-  // Close the CSV file
-  csvFile.close();
-
-  printLLVMErrs("CSV file '" + filename + "' created successfully!\n");
-}
-
-void printLLVMErrs(llvm::StringRef Msg) { llvm::errs() << Msg << "\n"; }
 
 // Basic Block Information Helpers
 
@@ -225,7 +157,7 @@ void count_allocations_in_basic_block(llvm::BasicBlock *BB,
       if (calledFunc) {
         std::string demangled_func_name =
             demangle_name_or_get_original_back(calledFunc->getName().str());
-        printLLVMErrs(demangled_func_name);
+        //         llvm::errs()<<demangled_func_name;
         if ((demangled_func_name.find("malloc") == 0 ||
              demangled_func_name.find("calloc") == 0 ||
              demangled_func_name.find("realloc") == 0 ||
@@ -278,9 +210,8 @@ uint get_unconditional_branches(llvm::BasicBlock *BB) {
   return uncond_branchcounter;
 }
 
-uint get_direct_calls(llvm::BasicBlock *BB)
-{
-  uint dcalls=0;
+uint get_direct_calls(llvm::BasicBlock *BB) {
+  uint dcalls = 0;
   for (auto &I : *BB) {
 
     if (llvm::isa<llvm::CallInst>(I)) {
@@ -293,9 +224,8 @@ uint get_direct_calls(llvm::BasicBlock *BB)
   return dcalls;
 }
 
-uint get_indirect_calls(llvm::BasicBlock *BB)
-{
-  uint indcalls =0;
+uint get_indirect_calls(llvm::BasicBlock *BB) {
+  uint indcalls = 0;
   for (auto &I : *BB) {
     if (llvm::isa<llvm::CallInst>(I)) {
       auto *CI = cast<llvm::CallInst>(&I);

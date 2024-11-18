@@ -11,8 +11,7 @@
 #include "llvm/Passes/PassPlugin.h"
 
 namespace llvm {
-    class CFGAnalysisPass
-        : public PassInfoMixin<CFGAnalysisPass> {
+    class BBFeaturesPass : public PassInfoMixin<BBFeaturesPass> {
     public:
         llvm::PreservedAnalyses run(llvm::Module &aModule,
                                     llvm::ModuleAnalysisManager &MAM);
@@ -21,7 +20,7 @@ namespace llvm {
 
     private:
         static AnalysisKey Key;
-        friend PassInfoMixin<CFGAnalysisPass>;
+        friend PassInfoMixin<BBFeaturesPass>;
     };
 } // namespace llvm
 

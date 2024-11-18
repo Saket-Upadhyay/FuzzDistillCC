@@ -18,8 +18,8 @@
 #include "llvm/Support/SourceMgr.h"
 
 // Project Imports
-#include "CFGAnalysisPass/CFGAnalysisPass.h"
-#include "LoopFeaturesPass/LoopFeaturesPass.h"
+#include "BBFeaturesPass.h"
+#include "FnFeaturesPass.h"
 
 // Aliasing Namespace
 namespace commandline = llvm::cl;
@@ -38,9 +38,8 @@ static commandline::opt<std::string> InputModule{
  */
 static void runCustomPass(llvm::Module &targetModule) {
   llvm::ModulePassManager MPM;
-  MPM.addPass(llvm::CFGAnalysisPass());
-//  llvm::FunctionPassManager FPM;
-//  FPM.addPass(llvm::LoopFeaturesPass());
+  MPM.addPass(llvm::BBFeaturesPass());
+  MPM.addPass(llvm::FnFeaturesPass());
 
   llvm::ModuleAnalysisManager MAM;
   llvm::FunctionAnalysisManager FAM;
