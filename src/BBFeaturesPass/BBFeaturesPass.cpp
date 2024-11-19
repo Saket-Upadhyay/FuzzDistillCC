@@ -9,6 +9,8 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Instructions.h>
 
+#include <cassert>
+
 uint get_in_degree(llvm::BasicBlock *BB);
 
 uint get_out_degree(llvm::BasicBlock *BB);
@@ -34,37 +36,46 @@ bool llvm::BBFeaturesPass::runOnModule(llvm::Module &TargetModule,
   for (auto &Function : TargetModule) {
     functioncount++;
 
-    for (auto &BasicBlock : Function) {
-      blockcount++;
+    if (demangle_name_or_get_original_back(Function.getName().str()).find("CWE") == 0) {
+      for (auto &BasicBlock : Function) {
+        blockcount++;
 
-      // Count static and dynamic allocations in BB1
-      uint staticAllocCount = 0;
-      uint dynamicAllocCount = 0;
-      uint dynamicMemOps = 0;
-      count_allocations_in_basic_block(&BasicBlock, staticAllocCount,
-                                       dynamicAllocCount, dynamicMemOps);
+        // Count static and dynamic allocations in BB1
+        uint staticAllocCount = 0;
+        uint dynamicAllocCount = 0;
+        uint dynamicMemOps = 0;
+        count_allocations_in_basic_block(&BasicBlock, staticAllocCount,
+                                         dynamicAllocCount, dynamicMemOps);
 
-      size_t id = reinterpret_cast<size_t>(&BasicBlock);
-      BasicBlockInfo temp_block(id);
-      temp_block.setInstructionCount([&BasicBlock](int instructioncount = 0) {for (auto &Inst : BasicBlock) {instructioncount++;}return instructioncount;}());
-      temp_block.setInDegree(get_in_degree(&BasicBlock));
-      temp_block.setOutDegree(get_out_degree(&BasicBlock));
-      temp_block.setStaticAllocations(staticAllocCount);
-      temp_block.setDynamicAllocations(dynamicAllocCount);
-      temp_block.setDynamicMemops(dynamicMemOps);
-      temp_block.setUncondBranches(get_conditional_branches(&BasicBlock));
-      temp_block.setUncondBranches(get_unconditional_branches(&BasicBlock));
-      temp_block.setIndirentCalls(get_indirect_calls(&BasicBlock));
-      temp_block.setDirectCalls(get_direct_calls(&BasicBlock));
+        size_t id = reinterpret_cast<size_t>(&BasicBlock);
+        BasicBlockInfo temp_block(id);
+        temp_block.setInstructionCount([&BasicBlock](int instructioncount = 0) {
+          for (auto &Inst : BasicBlock) {
+            instructioncount++;
+          }
+          return instructioncount;
+        }());
+        temp_block.setInDegree(get_in_degree(&BasicBlock));
+        temp_block.setOutDegree(get_out_degree(&BasicBlock));
+        temp_block.setStaticAllocations(staticAllocCount);
+        temp_block.setDynamicAllocations(dynamicAllocCount);
+        temp_block.setDynamicMemops(dynamicMemOps);
+        temp_block.setUncondBranches(get_conditional_branches(&BasicBlock));
+        temp_block.setUncondBranches(get_unconditional_branches(&BasicBlock));
+        temp_block.setIndirentCalls(get_indirect_calls(&BasicBlock));
+        temp_block.setDirectCalls(get_direct_calls(&BasicBlock));
 
-      std::string trydemangleBBparent = demangle_name_or_get_original_back(
-          BasicBlock.getParent()->getName().str());
-      temp_block.setBlockName("BB" + std::to_string(blockcount) + "_" +
-                              trydemangleBBparent);
-      BasicBlock.setName("BB" + std::to_string(blockcount) + "_" +
-                         std::to_string(id));
-      //      printLLVMErrs(BasicBlock.getName().str());
-      blocks.push_back(temp_block);
+        temp_block.setBlockName("BB" + std::to_string(blockcount) + "_" +
+                                demangle_name_or_get_original_back(BasicBlock.getParent()->getName().str()));
+        BasicBlock.setName("BB" + std::to_string(blockcount) + "_" +
+                           std::to_string(id));
+
+        if (temp_block.get_block_name().find("bad") != std::string::npos) {
+          temp_block.setIsVulnerable(1);
+        }
+
+        blocks.push_back(temp_block);
+      }
     }
   }
 
@@ -75,6 +86,7 @@ bool llvm::BBFeaturesPass::runOnModule(llvm::Module &TargetModule,
 llvm::PreservedAnalyses
 llvm::BBFeaturesPass::run(llvm::Module &AModule,
                           llvm::ModuleAnalysisManager &MAM) {
+  // assert(Changed);
   if (runOnModule(AModule, MAM)) {
     return llvm::PreservedAnalyses::none();
   }

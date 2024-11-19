@@ -145,25 +145,35 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
     count_allocations_in_function(&F, staticAllocCount, dynamicAllocCount,
                                   dynamicMemOps);
 
-    size_t id = reinterpret_cast<size_t>(&F);
+    const auto id = reinterpret_cast<size_t>(&F);
     FunctionInfo temp_fn(id);
-    temp_fn.setInstructionCount(F.getInstructionCount());
-    temp_fn.setBlockCount([&F](int blockcount = 0) {for (auto &BasicBlock : F) {blockcount++;} return blockcount;}());
     temp_fn.setFunctionName(
         "F" + demangle_name_or_get_original_back(F.getName().str()));
-    //Reduce Clutter, remove stdlib and llvm functions
-    if (!(temp_fn.getFunctionName().find("Fstd::")==0) && !(temp_fn.getFunctionName().find("Fllvm")==0) && !(temp_fn.getFunctionName().find("F__")==0) )
-      llvm::errs()<<temp_fn.getFunctionName()<<"\n";
-    temp_fn.setArgumentCount(F.getNumOperands());
-    temp_fn.setCondBranches(get_conditional_branches(&F));
-    temp_fn.setUncondBranches(get_unconditional_branches(&F));
-    temp_fn.setDirectCalls(get_direct_calls(&F));
-    temp_fn.setIndirectCalls(get_indirect_calls(&F));
-    temp_fn.setStaticAllocations(staticAllocCount);
-    temp_fn.setDynamicAllocations(dynamicAllocCount);
-    temp_fn.setDynamicMemops(dynamicMemOps);
+    if (temp_fn.getFunctionName().find("FCWE") == 0) {
+      if (F.getInstructionCount() > 0) {
+        temp_fn.setInstructionCount(F.getInstructionCount());
+        temp_fn.setBlockCount([&F](uint blockcount = 0) {
+          for (auto &BasicBlock : F) {
+            blockcount++;
+          }
+          return blockcount;
+        }());
 
-    function_data_vector.emplace_back(temp_fn);
+        if (temp_fn.getFunctionName().find("bad") != std::string::npos) {
+          temp_fn.setIsVulnerable(1);
+        }
+        temp_fn.setArgumentCount(F.getNumOperands());
+        temp_fn.setCondBranches(get_conditional_branches(&F));
+        temp_fn.setUncondBranches(get_unconditional_branches(&F));
+        temp_fn.setDirectCalls(get_direct_calls(&F));
+        temp_fn.setIndirectCalls(get_indirect_calls(&F));
+        temp_fn.setStaticAllocations(staticAllocCount);
+        temp_fn.setDynamicAllocations(dynamicAllocCount);
+        temp_fn.setDynamicMemops(dynamicMemOps);
+
+        function_data_vector.emplace_back(temp_fn);
+      }
+    }
   }
 
   // Save all data

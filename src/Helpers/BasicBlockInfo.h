@@ -64,7 +64,7 @@ public:
   }
   void setIsVulnerable(uint isVulnerable) { is_vulnerable = isVulnerable; }
   void setCallFreq(uint callFreq) { call_freq = callFreq; }
-
+  [[nodiscard]] std::string get_block_name() const { return block_name; }
   // getCSVinfo
   [[nodiscard]]
   std::string toCSV() const {

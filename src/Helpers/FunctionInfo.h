@@ -12,9 +12,9 @@ class FunctionInfo {
 private:
   std::size_t id;
   std::string function_name;
-  int instruction_count;
-  int block_count;
-  int argument_count;
+  uint instruction_count;
+  uint block_count;
+  uint argument_count;
   uint in_degree;           // Number of incoming edges
   uint out_degree;          // Number of outgoing edges
   uint static_allocations;  // How many times the block was executed
@@ -27,31 +27,36 @@ private:
   uint indirect_calls;
 
 public:
-  explicit FunctionInfo(size_t id)
-      : id(id), instruction_count(0), in_degree(0), out_degree(0),
-        static_allocations(0), dynamic_allocations(0), dynamic_memops(0),
-        is_vulnerable(0), cond_branches(0), uncond_branches(0), direct_calls(0),
+  explicit FunctionInfo(const size_t id)
+      : id(id), instruction_count(0), block_count(0), argument_count(0),
+        in_degree(0), out_degree(0), static_allocations(0),
+        dynamic_allocations(0), dynamic_memops(0), is_vulnerable(0),
+        cond_branches(0), uncond_branches(0), direct_calls(0),
         indirect_calls(0) {}
 
-  void setBlockCount(int blockCount) { block_count = blockCount; }
+  void setBlockCount(uint blockCount) { block_count = blockCount; }
   void setIsVulnerable(uint isVulnerable) { is_vulnerable = isVulnerable; }
   void setFunctionName(const std::string &functionName) {
     function_name = functionName;
   }
-  void setArgumentCount(int argumentCount) { argument_count = argumentCount; }
-  void setInstructionCount(int instructionCount) {
+  void setArgumentCount(uint argumentCount) { argument_count = argumentCount; }
+  void setInstructionCount(const uint instructionCount) {
     instruction_count = instructionCount;
   }
-  void setInDegree(uint inDegree) { in_degree = inDegree; }
-  void setOutDegree(uint outDegree) { out_degree = outDegree; }
+  void setInDegree(const uint inDegree) { in_degree = inDegree; }
+  void setOutDegree(const uint outDegree) { out_degree = outDegree; }
   void setStaticAllocations(uint staticAllocations) {
     static_allocations = staticAllocations;
   }
   void setDynamicAllocations(uint dynamicAllocations) {
     dynamic_allocations = dynamicAllocations;
   }
-  const std::string &getFunctionName() const { return function_name; }
-  void setDynamicMemops(uint dynamicMemops) { dynamic_memops = dynamicMemops; }
+  [[nodiscard]] const std::string &getFunctionName() const {
+    return function_name;
+  }
+  void setDynamicMemops(const uint dynamicMemops) {
+    dynamic_memops = dynamicMemops;
+  }
   void setCondBranches(uint condBranches) { cond_branches = condBranches; }
   void setUncondBranches(uint uncondBranches) {
     uncond_branches = uncondBranches;
@@ -60,8 +65,7 @@ public:
   void setIndirectCalls(uint indirectCalls) { indirect_calls = indirectCalls; }
 
   // getCSVinfo
-  [[nodiscard]]
-  std::string toCSV() const {
+  [[nodiscard]] std::string toCSV() const {
     return std::to_string(id) + ";" + function_name + ";" +
            std::to_string(instruction_count) + ";" +
            std::to_string(block_count) + ";" + std::to_string(in_degree) + ";" +

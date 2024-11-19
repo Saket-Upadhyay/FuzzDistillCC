@@ -7,13 +7,27 @@
 #include "iostream"
 #include <cxxabi.h>
 
+std::string const FNCSVHEADER =
+    "Function ID;Function Name;Instructions;BBs;In-degree;Out-degree;Static "
+    "Allocations;Dynamic "
+    "Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;"
+    "InDirectCalls;VULNERABLE";
+
+std::string const BBCSVHEADER =
+    "Block ID;Block Name;Instructions;In-degree;Out-degree;Static "
+    "Allocations;Dynamic "
+    "Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;"
+    "InDirectCalls;VULNERABLE";
+
+#define WRITEHEADER false
+
 /***
  *
  * @param filename
  * @param block_info_vector
  */
 void save_to_csv(const std::string &filename,
-                 std::vector<BasicBlockInfo> &block_info_vector) {
+                 const std::vector<BasicBlockInfo> &block_info_vector) {
   // Create and open the CSV file
   std::ofstream csvFile(filename, std::ios::out | std::ios::app);
 
@@ -22,11 +36,9 @@ void save_to_csv(const std::string &filename,
     std::cerr << "Error opening file!" << std::endl;
     return; // Exit if the file couldn't be opened
   }
-  csvFile << "Block ID;Block Name;Instructions;In-degree;Out-degree;Static "
-             "Allocations;Dynamic "
-             "Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;"
-             "InDirectCalls;VULNERABLE"
-          << std::endl;
+  if constexpr (WRITEHEADER) {
+    csvFile << BBCSVHEADER << std::endl;
+  }
 
   // Write data to the CSV file
   for (const auto &block : block_info_vector) {
@@ -45,7 +57,7 @@ void save_to_csv(const std::string &filename,
  * @param function_info_vector
  */
 void save_to_csv(const std::string &filename,
-                 std::vector<FunctionInfo> &function_info_vector) {
+                 const std::vector<FunctionInfo> &function_info_vector) {
   // Create and open the CSV file
   std::ofstream csvFile(filename, std::ios::out | std::ios::app);
 
@@ -54,11 +66,9 @@ void save_to_csv(const std::string &filename,
     std::cerr << "Error opening file!" << std::endl;
     return; // Exit if the file couldn't be opened
   }
-  csvFile << "Function ID;Function Name;Instructions;BBs;In-degree;Out-degree;Static "
-             "Allocations;Dynamic "
-             "Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;"
-             "InDirectCalls;VULNERABLE"
-          << std::endl;
+  if constexpr (WRITEHEADER) {
+    csvFile << FNCSVHEADER << std::endl;
+  }
 
   // Write data to the CSV file
   for (const auto &func : function_info_vector) {
@@ -70,7 +80,6 @@ void save_to_csv(const std::string &filename,
 
   std::cout << "CSV file '" + filename + "' created successfully!\n";
 }
-
 
 /***
  * Takes a C++ mangled function names and returns a demangled string.
