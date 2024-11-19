@@ -14,6 +14,7 @@ private:
   std::string function_name;
   int instruction_count;
   int block_count;
+  int argument_count;
   uint in_degree;           // Number of incoming edges
   uint out_degree;          // Number of outgoing edges
   uint static_allocations;  // How many times the block was executed
@@ -37,6 +38,7 @@ public:
   void setFunctionName(const std::string &functionName) {
     function_name = functionName;
   }
+  void setArgumentCount(int argumentCount) { argument_count = argumentCount; }
   void setInstructionCount(int instructionCount) {
     instruction_count = instructionCount;
   }
@@ -48,6 +50,7 @@ public:
   void setDynamicAllocations(uint dynamicAllocations) {
     dynamic_allocations = dynamicAllocations;
   }
+  const std::string &getFunctionName() const { return function_name; }
   void setDynamicMemops(uint dynamicMemops) { dynamic_memops = dynamicMemops; }
   void setCondBranches(uint condBranches) { cond_branches = condBranches; }
   void setUncondBranches(uint uncondBranches) {

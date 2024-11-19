@@ -147,10 +147,14 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
 
     size_t id = reinterpret_cast<size_t>(&F);
     FunctionInfo temp_fn(id);
-    temp_fn.setInstructionCount([&F](int instcount = 0) {for (auto &BasicBlock : F) {for (auto &Inst : BasicBlock) {instcount++;}}return instcount;}());
+    temp_fn.setInstructionCount(F.getInstructionCount());
     temp_fn.setBlockCount([&F](int blockcount = 0) {for (auto &BasicBlock : F) {blockcount++;} return blockcount;}());
     temp_fn.setFunctionName(
         "F" + demangle_name_or_get_original_back(F.getName().str()));
+    //Reduce Clutter, remove stdlib and llvm functions
+    if (!(temp_fn.getFunctionName().find("Fstd::")==0) && !(temp_fn.getFunctionName().find("Fllvm")==0) && !(temp_fn.getFunctionName().find("F__")==0) )
+      llvm::errs()<<temp_fn.getFunctionName()<<"\n";
+    temp_fn.setArgumentCount(F.getNumOperands());
     temp_fn.setCondBranches(get_conditional_branches(&F));
     temp_fn.setUncondBranches(get_unconditional_branches(&F));
     temp_fn.setDirectCalls(get_direct_calls(&F));
