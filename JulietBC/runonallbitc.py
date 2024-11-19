@@ -23,12 +23,6 @@ def operate_on_given_bitcs(bitc_list):
         # print(fuzzcc_command)
         try:
             res = subprocess.run(fuzzcc_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            # print(f"Output for {bitc}:")
-            # print(res.stdout.decode())
-            # if res.stderr:
-            #     print("Error:")
-            #     print(res.stderr.decode())
-
         except subprocess.CalledProcessError as e:
             print(f"Error executing the fuzzcc for {bitc}: {e}")
 
@@ -54,7 +48,7 @@ if __name__ == '__main__':
     clear_data()
 
     if sys.platform == 'linux':
-        LinuxBitcs = get_all_bitc_files(LINUX_BITC_PATH)[:50]
+        LinuxBitcs = get_all_bitc_files(LINUX_BITC_PATH)
         print(f"Found {len(LinuxBitcs)} Linux bitcode files")
         print("Processing all bitcs")
         operate_on_given_bitcs(LinuxBitcs)

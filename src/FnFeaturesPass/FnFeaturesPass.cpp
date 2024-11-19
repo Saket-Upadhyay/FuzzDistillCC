@@ -177,7 +177,7 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
   }
 
   // Save all data
-  save_to_csv(targetModule.getName().str() + "_FunctionFeatues.csv",
+  save_to_csv(targetModule.getName().str() + "_FunctionFeatures.csv",
               function_data_vector);
   return Changed;
 }
