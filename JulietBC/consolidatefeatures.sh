@@ -23,7 +23,7 @@ echo "$bb_files" | while read -r bbfile; do
     rm "$bbfile"  # Remove the original file
     # Display progress bar
     echo -n "$counter/$total_bb_files files processed for BB features... "
-    printf "[%-50s] %d%%\r" $(printf "%0.s#" $(seq 1 $((counter * 50 / total_bb_files)))) $((counter * 100 / total_bb_files))
+    printf "[%-50s] %d%%\r" "$(printf "%0.s#" $(seq 1 $((counter * 50 / total_bb_files))))" "$((counter * 100 / total_bb_files))"
 done
 echo -e "\nFinished processing BB feature files."
 
@@ -43,7 +43,8 @@ echo "$fn_files" | while read -r fnfile; do
     rm "$fnfile"  # Remove the original file
     # Display progress bar
     echo -n "$counter/$total_fn_files files processed for FN features... "
-    printf "[%-50s] %d%%\r" $(printf "%0.s#" $(seq 1 $((counter * 50 / total_fn_files)))) $((counter * 100 / total_fn_files))
+
+    printf "[%-50s] %d%%\r" "$(printf "%0.s#" $(seq 1 $((counter * 50 / total_fn_files))))" "$((counter * 100 / total_fn_files))"
 done
 echo -e "\nFinished processing FN feature files."
 
