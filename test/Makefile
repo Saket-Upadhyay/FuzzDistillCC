@@ -5,23 +5,23 @@ FINALBINARY= modifiedbinary
 # Define targets
 .PHONY: clean all run clangbuild instrument bitcodetobinary runlli dis
 
-all: clean clangbuild fuzzpiler bitcodetobinary
+all: clean clangbuild fuzzdistillcc bitcodetobinary
 clean:
 	rm -f *.o *.bc modifiedbinary *.ll *.csv
 
 run: all
 	./$(FINALBINARY)
 
-runlli: fuzzpiler
+runlli: fuzzdistillcc
 	lli -load out.bc
 
 clangbuild: $(SOURCE)
 	clang++ -O0 -static -g -c -emit-llvm -o original.bc $(SOURCE)
 
-fuzzpiler: clangbuild
-	./fuzzcc original.bc
+fuzzdistillcc: clangbuild
+	./fuzzdistillcc original.bc
 
-bitcodetobinary: fuzzpiler
+bitcodetobinary: fuzzdistillcc
 	llc --relocation-model=pic -filetype=obj original.bc -o original.o
 	clang++ original.o -o $(FINALBINARY)
 

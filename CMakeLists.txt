@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.29)
-project(FuzzPiler)
+project(FuzzDistillCC)
 set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 20)

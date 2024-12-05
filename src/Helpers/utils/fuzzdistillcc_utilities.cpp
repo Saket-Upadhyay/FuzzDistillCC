@@ -2,7 +2,7 @@
 // Created by Saket Upadhyay on 11/18/24.
 //
 
-#include "fuzzpiler_utilities.h"
+#include "fuzzdistillcc_utilities.h"
 #include "fstream"
 #include "iostream"
 #include <cxxabi.h>

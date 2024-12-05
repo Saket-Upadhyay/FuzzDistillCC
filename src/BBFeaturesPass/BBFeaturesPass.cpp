@@ -5,7 +5,7 @@
 #include "BBFeaturesPass.h"
 
 #include "BasicBlockInfo.h"
-#include <fuzzpiler_utilities.h>
+#include <fuzzdistillcc_utilities.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Instructions.h>
 

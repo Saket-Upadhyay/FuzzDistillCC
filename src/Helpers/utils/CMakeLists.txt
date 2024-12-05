@@ -1,4 +1,4 @@
-add_library(fuzzpiler_utils)
-target_sources(fuzzpiler_utils PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/fuzzpiler_utilities.cpp ${CMAKE_CURRENT_SOURCE_DIR}/fuzzpiler_utilities.h)
+add_library(fuzzdistillcc_utils)
+target_sources(fuzzdistillcc_utils PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/fuzzdistillcc_utilities.cpp ${CMAKE_CURRENT_SOURCE_DIR}/fuzzdistillcc_utilities.h)
 
-target_include_directories(fuzzpiler_utils PRIVATE ..)
+target_include_directories(fuzzdistillcc_utils PRIVATE ..)

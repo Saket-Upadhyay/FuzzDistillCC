@@ -5,7 +5,7 @@
 #include "FnFeaturesPass.h"
 
 #include "FunctionInfo.h"
-#include "fuzzpiler_utilities.h"
+#include "fuzzdistillcc_utilities.h"
 #include <cxxabi.h>
 #include <iostream>
 #include <llvm/ADT/StringExtras.h>
