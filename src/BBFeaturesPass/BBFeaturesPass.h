@@ -2,8 +2,8 @@
 // Created by Saket Upadhyay on 11/6/24.
 //
 
-#ifndef CFGANALYSISPASS_H
-#define CFGANALYSISPASS_H
+#ifndef BBFEATURESPASS_H
+#define BBFEATURESPASS_H
 
 
 #include "llvm/IR/PassManager.h"
@@ -25,4 +25,4 @@ namespace llvm {
 } // namespace llvm
 
 
-#endif //CFGANALYSISPASS_H
+#endif //BBFEATURESPASS_H

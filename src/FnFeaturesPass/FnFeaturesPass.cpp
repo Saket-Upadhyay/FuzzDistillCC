@@ -1,13 +1,14 @@
 //
-// Created by drdope on 11/6/24.
+// Created by Saket Upadhyay on 11/6/24.
 //
+
+#define ISNISTTRAININGSET false
 
 #include "FnFeaturesPass.h"
 
 #include "FunctionInfo.h"
 #include "fuzzdistillcc_utilities.h"
 #include <cxxabi.h>
-#include <iostream>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Analysis/CFG.h>
 #include <llvm/Analysis/LoopInfo.h>
@@ -149,7 +150,9 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
     FunctionInfo temp_fn(id);
     temp_fn.setFunctionName(
         "F" + demangle_name_or_get_original_back(F.getName().str()));
+#if ISNISTTRAININGSET == true
     if (temp_fn.getFunctionName().find("FCWE") == 0) {
+#endif
       if (F.getInstructionCount() > 0) {
         temp_fn.setInstructionCount(F.getInstructionCount());
         temp_fn.setBlockCount([&F](uint blockcount = 0) {
@@ -173,7 +176,9 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
 
         function_data_vector.emplace_back(temp_fn);
       }
+#if ISNISTTRAININGSET == true
     }
+#endif
   }
 
   // Save all data

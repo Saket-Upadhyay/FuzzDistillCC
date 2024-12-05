@@ -1,6 +1,8 @@
 //
-// Created by drdope on 11/6/24.
+// Created by Saket Upadhyay on 11/6/24.
 //
+
+#define ISNISTTRAININGSET false
 
 #include "BBFeaturesPass.h"
 
@@ -35,8 +37,10 @@ bool llvm::BBFeaturesPass::runOnModule(llvm::Module &TargetModule,
 
   for (auto &Function : TargetModule) {
     functioncount++;
-
-    if (demangle_name_or_get_original_back(Function.getName().str()).find("CWE") == 0) {
+#if ISNISTTRAININGSET == true
+    if (demangle_name_or_get_original_back(Function.getName().str())
+            .find("CWE") == 0) {
+#endif
       for (auto &BasicBlock : Function) {
         blockcount++;
 
@@ -66,7 +70,8 @@ bool llvm::BBFeaturesPass::runOnModule(llvm::Module &TargetModule,
         temp_block.setDirectCalls(get_direct_calls(&BasicBlock));
 
         temp_block.setBlockName("BB" + std::to_string(blockcount) + "_" +
-                                demangle_name_or_get_original_back(BasicBlock.getParent()->getName().str()));
+                                demangle_name_or_get_original_back(
+                                    BasicBlock.getParent()->getName().str()));
         BasicBlock.setName("BB" + std::to_string(blockcount) + "_" +
                            std::to_string(id));
 
@@ -77,7 +82,9 @@ bool llvm::BBFeaturesPass::runOnModule(llvm::Module &TargetModule,
         blocks.push_back(temp_block);
       }
     }
+#if ISNISTTRAININGSET == true
   }
+#endif
 
   save_to_csv(TargetModule.getName().str() + "_BBFeatures.csv", blocks);
   return Changed;
