@@ -9,8 +9,10 @@
 #include "FunctionInfo.h"
 #include "fuzzdistillcc_utilities.h"
 #include <cxxabi.h>
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Analysis/CFG.h>
+#include <llvm/Analysis/CallGraph.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/Instructions.h>
 
@@ -138,6 +140,38 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
   //       }
   //     }
 
+    llvm::DenseMap<llvm::Function *, unsigned> inDegreeMap;
+    llvm::DenseMap<llvm::Function *, unsigned> outDegreeMap;
+
+    // Retrieve the call graph for the module
+    llvm::CallGraph CG(targetModule);
+
+    // Initialize the degree maps with zero degrees for all functions
+    for (auto &F : targetModule) {
+        if (!F.isDeclaration()) {
+            inDegreeMap[&F] = 0;
+            outDegreeMap[&F] = 0;
+        }
+    }
+
+    // Traverse the call graph to calculate in-degree and out-degree
+    for (auto &CGI : CG) {
+        auto &CallerNode = CGI.second; // CallGraphNode of the caller function
+        llvm::Function *CallerFunction = CallerNode->getFunction(); // Caller function
+
+        if (!CallerFunction || CallerFunction->isDeclaration())
+            continue; // Skip if the function is a declaration or null
+
+        // For each function that the caller calls (out-degree)
+        for (auto &Callee : *CallerNode) {
+            llvm::Function *CalleeFunction = Callee.second->getFunction();
+            if (CalleeFunction && !CalleeFunction->isDeclaration()) {
+                outDegreeMap[CallerFunction]++;
+                inDegreeMap[CalleeFunction]++;
+            }
+        }
+    }
+
   for (auto &F : targetModule) {
 
     uint staticAllocCount = 0;
@@ -168,6 +202,8 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
         temp_fn.setArgumentCount(F.getNumOperands());
         temp_fn.setCondBranches(get_conditional_branches(&F));
         temp_fn.setUncondBranches(get_unconditional_branches(&F));
+        temp_fn.setInDegree(inDegreeMap[&F]);
+        temp_fn.setOutDegree(outDegreeMap[&F]);
         temp_fn.setDirectCalls(get_direct_calls(&F));
         temp_fn.setIndirectCalls(get_indirect_calls(&F));
         temp_fn.setStaticAllocations(staticAllocCount);
