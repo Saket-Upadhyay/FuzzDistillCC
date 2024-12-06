@@ -4,7 +4,7 @@ import subprocess
 import shutil
 from tqdm import tqdm
 
-FUZZCC_PATH = "./fuzzcc"
+FUZZCC_PATH = "./fuzzdistillcc"
 LINUX_BITC_PATH = os.path.abspath(os.path.realpath("./LinuxIRs"))
 MAC_BITC_PATH = os.path.abspath(os.path.realpath("./MacIRs"))
 TARGET_CSV_DIR = os.path.abspath(os.path.realpath("./CSVS/"))
