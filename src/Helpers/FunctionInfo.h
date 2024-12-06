@@ -20,6 +20,7 @@ private:
   uint static_allocations;  // How many times the block was executed
   uint dynamic_allocations; // Number of errors encountered
   uint dynamic_memops;
+  uint num_loops;
   uint is_vulnerable;
   uint cond_branches;   // Number of conditional branch instructions
   uint uncond_branches; // Number of unconditional branch instructions
@@ -32,7 +33,7 @@ public:
         in_degree(0), out_degree(0), static_allocations(0),
         dynamic_allocations(0), dynamic_memops(0), is_vulnerable(0),
         cond_branches(0), uncond_branches(0), direct_calls(0),
-        indirect_calls(0) {}
+        indirect_calls(0), num_loops(0) {}
 
   void setBlockCount(uint blockCount) { block_count = blockCount; }
   void setIsVulnerable(uint isVulnerable) { is_vulnerable = isVulnerable; }
@@ -64,12 +65,15 @@ public:
   void setDirectCalls(uint directCalls) { direct_calls = directCalls; }
   void setIndirectCalls(uint indirectCalls) { indirect_calls = indirectCalls; }
 
+  void setNumLoops(uint numLoops) { num_loops = numLoops; }
+
   // getCSVinfo
   [[nodiscard]] std::string toCSV() const {
     return std::to_string(id) + ";" + function_name + ";" +
            std::to_string(instruction_count) + ";" +
            std::to_string(block_count) + ";" + std::to_string(in_degree) + ";" +
            std::to_string(out_degree) + ";" +
+           std::to_string(num_loops) + ";" +
            std::to_string(static_allocations) + ";" +
            std::to_string(dynamic_allocations) + ";" +
            std::to_string(dynamic_memops) + ";" +

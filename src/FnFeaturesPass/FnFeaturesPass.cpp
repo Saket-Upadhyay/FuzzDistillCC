@@ -128,95 +128,108 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
                                        llvm::ModuleAnalysisManager &MAM) {
   bool Changed = false;
   std::vector<FunctionInfo> function_data_vector;
-  //      llvm::FunctionAnalysisManager &FAM =
-  //        MAM.getResult<FunctionAnalysisManagerModuleProxy>(targetModule)
-  //            .getManager();
-  // LoopInfo &LI = FAM.getResult<LoopAnalysis>(Function);
-  //
-  //     for (auto loop : LI) {
-  //       for (auto loopbbs : loop->getBlocks()) {
-  //         errs() << loopbbs->getName().str() << "\n";
-  //         // THESE BBS ARE LOOPED
-  //       }
-  //     }
 
-    llvm::DenseMap<llvm::Function *, unsigned> inDegreeMap;
-    llvm::DenseMap<llvm::Function *, unsigned> outDegreeMap;
+  llvm::DenseMap<llvm::Function *, unsigned> loopCountMap;
 
-    // Retrieve the call graph for the module
-    llvm::CallGraph CG(targetModule);
+  FunctionAnalysisManager &FAM =
+      MAM.getResult<FunctionAnalysisManagerModuleProxy>(targetModule)
+          .getManager();
 
-    // Initialize the degree maps with zero degrees for all functions
-    for (auto &F : targetModule) {
-        if (!F.isDeclaration()) {
-            inDegreeMap[&F] = 0;
-            outDegreeMap[&F] = 0;
+  for (auto &F : targetModule) {
+    if (!F.isDeclaration()) {
+      loopCountMap[&F] = 0;
+
+      auto &LI = FAM.getResult<llvm::LoopAnalysis>(F);
+
+      for (auto &BB : F) {
+        if (LI.isLoopHeader(&BB)) {
+          loopCountMap[&F]++;
         }
+      }
     }
+  }
 
-    // Traverse the call graph to calculate in-degree and out-degree
-    for (auto &CGI : CG) {
-        auto &CallerNode = CGI.second; // CallGraphNode of the caller function
-        llvm::Function *CallerFunction = CallerNode->getFunction(); // Caller function
+  llvm::DenseMap<llvm::Function *, unsigned> inDegreeMap;
 
-        if (!CallerFunction || CallerFunction->isDeclaration())
-            continue; // Skip if the function is a declaration or null
+  llvm::DenseMap<llvm::Function *, unsigned> outDegreeMap;
 
-        // For each function that the caller calls (out-degree)
-        for (auto &Callee : *CallerNode) {
-            llvm::Function *CalleeFunction = Callee.second->getFunction();
-            if (CalleeFunction && !CalleeFunction->isDeclaration()) {
-                outDegreeMap[CallerFunction]++;
-                inDegreeMap[CalleeFunction]++;
-            }
-        }
+  // Retrieve the call graph for the module
+  llvm::CallGraph CG(targetModule);
+
+  // Initialize the degree maps with zero degrees for all functions
+  for (auto &F : targetModule) {
+    if (!F.isDeclaration()) {
+      inDegreeMap[&F] = 0;
+      outDegreeMap[&F] = 0;
     }
+  }
+
+  // Traverse the call graph to calculate in-degree and out-degree
+  for (auto &CGI : CG) {
+    auto &CallerNode = CGI.second; // CallGraphNode of the caller function
+    llvm::Function *CallerFunction =
+        CallerNode->getFunction(); // Caller function
+
+    if (!CallerFunction || CallerFunction->isDeclaration())
+      continue; // Skip if the function is a declaration or null
+
+    // For each function that the caller calls (out-degree)
+    for (auto &Callee : *CallerNode) {
+      llvm::Function *CalleeFunction = Callee.second->getFunction();
+      if (CalleeFunction && !CalleeFunction->isDeclaration()) {
+        outDegreeMap[CallerFunction]++;
+        inDegreeMap[CalleeFunction]++;
+      }
+    }
+  }
 
   for (auto &F : targetModule) {
 
-    uint staticAllocCount = 0;
-    uint dynamicAllocCount = 0;
-    uint dynamicMemOps = 0;
-    count_allocations_in_function(&F, staticAllocCount, dynamicAllocCount,
-                                  dynamicMemOps);
+    if (!F.isDeclaration()) {
+      uint staticAllocCount = 0;
+      uint dynamicAllocCount = 0;
+      uint dynamicMemOps = 0;
+      count_allocations_in_function(&F, staticAllocCount, dynamicAllocCount,
+                                    dynamicMemOps);
 
-    const auto id = reinterpret_cast<size_t>(&F);
-    FunctionInfo temp_fn(id);
-    temp_fn.setFunctionName(
-        "F" + demangle_name_or_get_original_back(F.getName().str()));
+      const auto id = reinterpret_cast<size_t>(&F);
+      FunctionInfo temp_fn(id);
+      temp_fn.setFunctionName(
+          "F" + demangle_name_or_get_original_back(F.getName().str()));
 #if ISNISTTRAININGSET == true
-    if (temp_fn.getFunctionName().find("FCWE") == 0) {
+      if (temp_fn.getFunctionName().find("FCWE") == 0) {
 #endif
-      if (F.getInstructionCount() > 0) {
-        temp_fn.setInstructionCount(F.getInstructionCount());
-        temp_fn.setBlockCount([&F](uint blockcount = 0) {
-          for (auto &BasicBlock : F) {
-            blockcount++;
+        if (F.getInstructionCount() > 0) {
+          temp_fn.setInstructionCount(F.getInstructionCount());
+          temp_fn.setBlockCount([&F](uint blockcount = 0) {
+            for (auto &BasicBlock : F) {
+              blockcount++;
+            }
+            return blockcount;
+          }());
+
+          if (temp_fn.getFunctionName().find("bad") != std::string::npos) {
+            temp_fn.setIsVulnerable(1);
           }
-          return blockcount;
-        }());
+          temp_fn.setArgumentCount(F.getNumOperands());
+          temp_fn.setCondBranches(get_conditional_branches(&F));
+          temp_fn.setUncondBranches(get_unconditional_branches(&F));
+          temp_fn.setInDegree(inDegreeMap[&F]);
+          temp_fn.setOutDegree(outDegreeMap[&F]);
+          temp_fn.setNumLoops(loopCountMap.at(&F));
+          temp_fn.setDirectCalls(get_direct_calls(&F));
+          temp_fn.setIndirectCalls(get_indirect_calls(&F));
+          temp_fn.setStaticAllocations(staticAllocCount);
+          temp_fn.setDynamicAllocations(dynamicAllocCount);
+          temp_fn.setDynamicMemops(dynamicMemOps);
 
-        if (temp_fn.getFunctionName().find("bad") != std::string::npos) {
-          temp_fn.setIsVulnerable(1);
+          function_data_vector.emplace_back(temp_fn);
         }
-        temp_fn.setArgumentCount(F.getNumOperands());
-        temp_fn.setCondBranches(get_conditional_branches(&F));
-        temp_fn.setUncondBranches(get_unconditional_branches(&F));
-        temp_fn.setInDegree(inDegreeMap[&F]);
-        temp_fn.setOutDegree(outDegreeMap[&F]);
-        temp_fn.setDirectCalls(get_direct_calls(&F));
-        temp_fn.setIndirectCalls(get_indirect_calls(&F));
-        temp_fn.setStaticAllocations(staticAllocCount);
-        temp_fn.setDynamicAllocations(dynamicAllocCount);
-        temp_fn.setDynamicMemops(dynamicMemOps);
-
-        function_data_vector.emplace_back(temp_fn);
-      }
 #if ISNISTTRAININGSET == true
-    }
+      }
 #endif
+    }
   }
-
   // Save all data
   save_to_csv(targetModule.getName().str() + "_FunctionFeatures.csv",
               function_data_vector);

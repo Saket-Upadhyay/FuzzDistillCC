@@ -16,6 +16,10 @@ int main() {
     double num1, num2;
     int *choice = new int;
 
+    for (int x = 0; x < 10; ++x) {
+      std::cerr<<".";
+    }
+
     while (true) {
         displayMenu();
         cin >> *choice;

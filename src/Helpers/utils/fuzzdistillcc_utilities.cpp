@@ -8,7 +8,7 @@
 #include <cxxabi.h>
 
 std::string const FNCSVHEADER =
-    "Function ID;Function Name;Instructions;BBs;In-degree;Out-degree;Static "
+    "Function ID;Function Name;Instructions;BBs;In-degree;Out-degree;Num Loops;Static "
     "Allocations;Dynamic "
     "Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;"
     "InDirectCalls;VULNERABLE";
