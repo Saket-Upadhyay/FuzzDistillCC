@@ -2,7 +2,7 @@
 // Created by Saket Upadhyay on 11/6/24.
 //
 
-#define ISNISTTRAININGSET false
+#define ISNISTTRAININGSET true
 
 #include "FnFeaturesPass.h"
 
@@ -233,6 +233,7 @@ bool llvm::FnFeaturesPass::runOnModule(llvm::Module &targetModule,
   // Save all data
   save_to_csv(targetModule.getName().str() + "_FunctionFeatures.csv",
               function_data_vector);
+  Changed = true;
   return Changed;
 }
 

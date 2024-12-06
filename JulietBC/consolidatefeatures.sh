@@ -3,7 +3,7 @@
 FINAL_BB_FEATURES_FILE="bigBBFeatures.csv"
 FINAL_FN_FEATURES_FILE="bigFNFeatures.csv"
 
-FN_CSV_HEADER="Function ID;Function Name;Instructions;BBs;In-degree;Out-degree;Static Allocations;Dynamic Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;InDirectCalls;VULNERABLE"
+FN_CSV_HEADER="Function ID;Function Name;Instructions;BBs;In-degree;Out-degree;Num Loops;Static Allocations;Dynamic Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;InDirectCalls;VULNERABLE"
 
 BB_CSV_HEADER="Block ID;Block Name;Instructions;In-degree;Out-degree;Static Allocations;Dynamic Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;InDirectCalls;VULNERABLE"
 
@@ -31,7 +31,7 @@ echo -e "\nFinished processing BB feature files."
 echo "$FN_CSV_HEADER" > "$FINAL_FN_FEATURES_FILE"
 
 # Find all FN feature CSV files and count them for progress bar
-fn_files=$(find ./CSVS/ -type f -name "*_FunctionFeatues.csv")
+fn_files=$(find ./CSVS/ -type f -name "*_FunctionFeatures.csv")
 total_fn_files=$(echo "$fn_files" | wc -l)
 
 # Concatenate FN feature CSV files with progress bar
