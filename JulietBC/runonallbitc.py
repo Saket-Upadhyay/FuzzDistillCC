@@ -13,7 +13,7 @@ TQDMBARFORMAT = "{l_bar}{bar}| {n_fmt}/{total_fmt} files"
 
 
 def get_all_bitc_files(dirpath):
-    return [os.path.join(LINUX_BITC_PATH, bitcf) for bitcf in os.listdir(dirpath) if bitcf.endswith('.bitc')]
+    return [os.path.join(dirpath, bitcf) for bitcf in os.listdir(dirpath) if bitcf.endswith('.bitc')]
 
 
 def operate_on_given_bitcs(bitc_list):
