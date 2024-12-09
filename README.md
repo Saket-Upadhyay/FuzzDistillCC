@@ -18,8 +18,8 @@ FuzzDistillCC
 │   ├── FnFeaturesPass
 │   └── Helpers
 └── test
-
 ```
+
 | Directory       | Description                                                                 |
 |-----------------|-------------------------------------------------------------------------------|
 | `JulietDatasetGen` | Directory for generating dataset from NIST Juliet1.3 bitcodes for macOS and Linux |
@@ -46,13 +46,13 @@ FuzzDistillCC
 └── fuzzdistillcc.cpp
 ```
 
-| Directory/File       | Description                                                        |
-|----------------------|--------------------------------------------------------------------|
-| `fuzzdistillcc.cpp`  | Source code for the standalone tool                                |
-| `BBFeaturesPass`     | Basic Block Feature Extraction Pass                                  |
-| `FnFeaturesPass`     | Function Feature extraction pass                                     |
-| `Helpers`            | Headers for Classes to store BB and Function information in passes   |
-| `Helpers/utils`      | Common helper functions utilized by both passes                    |
+| Directory/File                                       | Description                                                        |
+|------------------------------------------------------|--------------------------------------------------------------------|
+| `fuzzdistillcc.cpp`                                  | Source code for the standalone tool                                |
+| `BBFeaturesPass`                                     | Basic Block (BB) Feature Extraction Pass                           |
+| `FnFeaturesPass`                                     | Function Feature extraction pass                                   |
+| `Helpers/FunctionInfo.h`  `Helpers/BasicBlockInfo.h` | Headers for Classes to store BB and Function information in passes |
+| `Helpers/utils`                                      | Common helper functions utilized by both passes                    |
 
 ## User Variables
 
