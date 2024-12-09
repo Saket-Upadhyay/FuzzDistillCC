@@ -2,7 +2,7 @@
 // Created by Saket Upadhyay on 11/6/24.
 //
 
-#define ISNISTTRAININGSET true
+#define ISNISTTRAININGSET false
 
 #include "FnFeaturesPass.h"
 

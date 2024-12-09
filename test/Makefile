@@ -1,19 +1,16 @@
 # Define variables
 SOURCE = calculator.cpp
-FINALBINARY= modifiedbinary
+FINALBINARY= calculator.out
 
 # Define targets
-.PHONY: clean all run clangbuild instrument bitcodetobinary runlli dis
+.PHONY: clean all run clangbuild instrument bitcodetobinary
 
 all: clean clangbuild fuzzdistillcc bitcodetobinary
 clean:
-	rm -f *.o *.bc modifiedbinary *.ll *.csv
+	rm -f *.o *.bc $(FINALBINARY) *.ll *.csv
 
 run: all
 	./$(FINALBINARY)
-
-runlli: fuzzdistillcc
-	lli -load out.bc
 
 clangbuild: $(SOURCE)
 	clang++ -O0 -static -g -c -emit-llvm -o original.bc $(SOURCE)
@@ -24,6 +21,3 @@ fuzzdistillcc: clangbuild
 bitcodetobinary: fuzzdistillcc
 	llc --relocation-model=pic -filetype=obj original.bc -o original.o
 	clang++ original.o -o $(FINALBINARY)
-
- dis: all
-	llvm-dis *.bc

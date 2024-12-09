@@ -19,7 +19,7 @@ std::string const BBCSVHEADER =
     "Allocations;MemOps;CondBranches;UnCondBranches;DirectCalls;"
     "InDirectCalls;VULNERABLE";
 
-#define WRITEHEADER false
+#define WRITEHEADER true
 
 /***
  *
