@@ -2,7 +2,14 @@
 
 The final Basic Block and Function features are extracted in Semicolon-Separated Values (SSV) format.
 
-### Function Features
+To load in pandas, use -
+```python
+import pandas as pd
+data = pd.read_csv("FNFeatures.csv", sep=";")
+```
+Assuming `FNFeatures.csv` is the target feature file.
+
+## Function Features
 
 The generated dataset is list of functions with various characteristics and a label indicating whether each function is
 vulnerable or not. The data is structured into 14 columns, which are described below:
@@ -31,7 +38,7 @@ vulnerable or not. The data is structured into 14 columns, which are described b
     pointer or a table).
 15. **VULNERABLE**: A binary label indicating whether the function is vulnerable (1) or not (0).
 
-### Basic Block Features
+## Basic Block Features
 
 Generated Basic Block dataset a collection of basic blocks (BBs) from functions with various characteristics and a label
 indicating whether each block is vulnerable or not. The data is structured into 13 columns, which are described below:
@@ -59,10 +66,10 @@ indicating whether each block is vulnerable or not. The data is structured into 
 
 ---
 
-### Conditional and Unconditional Branches in Basic Blocks
+### A Note on Branches in Basic Blocks
 
 Conditional branches (CondBranches) and unconditional branches (UnCondBranches) primarily serve as sanity checks and do
-not significantly impact the categorization of basic blocks (it might actually harm the accuracy). Let’s analyze the
+not significantly impact the categorization of Basic Blocks (it might actually harm the accuracy). Let’s analyze the
 possible values of \( N \) (number of conditional branches) and \( M \) (number of unconditional branches).
 
 A basic block can contain at most one conditional branch. A conditional branch is typically used to terminate the block
@@ -105,7 +112,8 @@ $$
 (M = 1) \Rightarrow (N = 0)
 $$
 
-In essence, by the above equations, only one of \( N \) or \( M \) can have the value of \( 1 \) at any given time.
+That means that only one of \( N \) or \( M \) can have the value of \( 1 \) at any given time.
 If \( N \) is set to \( 1 \), \( M \) must be set to \( 0 \), and vice versa.
 
-We can use this relationship to check the functionality of our compiler passes and sanity of our training dataset.
+We can use this relationship to check the functionality of our BB compiler pass and sanity of our training dataset.
+
