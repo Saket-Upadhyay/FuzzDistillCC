@@ -1,16 +1,17 @@
 # FuzzDistillCC
+FuzzDistill Compiler Component (FuzzDistillCC) comprises a suite of Feature Extraction Compiler Passes and a standalone tool designed to extract features for FuzzDistillML and FuzzDistillWeb.
 
-## Project Structure
+> This module constitutes one-third of the FuzzDistill project. For further information on other modules and the project paper, please refer to the GitHub repository at [FuzzDistill](https://github.com/Saket-Upadhyay/FuzzDistill).
 
+### Project Structure
+
+#### Root
 ```text
 FuzzDistillCC
 ├── JulietDatasetGen
 │   ├── CSVS
 │   ├── Juliet1_3LinuxBitcs
 │   └── Juliet1_3MacBitcs
-├── build
-│   ├── CMakeFiles
-│   └── src
 ├── docs
 ├── src
 │   ├── BBFeaturesPass
@@ -18,9 +19,15 @@ FuzzDistillCC
 │   └── Helpers
 └── test
 
-14 directories
 ```
+| Directory       | Description                                                                 |
+|-----------------|-------------------------------------------------------------------------------|
+| `JulietDatasetGen` | Directory for generating dataset from NIST Juliet1.3 bitcodes for macOS and Linux |
+| `docs`          | Project documentation                                                         |
+| `src`           | Source code directory                                                       |
+| `test`          | Simple calculator program to test the standalone tool                         |
 
+#### Source
 ```shell
 ./src
 ├── BBFeaturesPass
@@ -38,6 +45,14 @@ FuzzDistillCC
 │   └── utils
 └── fuzzdistillcc.cpp
 ```
+
+| Directory/File       | Description                                                        |
+|----------------------|--------------------------------------------------------------------|
+| `fuzzdistillcc.cpp`  | Source code for the standalone tool                                |
+| `BBFeaturesPass`     | Basic Block Feature Extraction Pass                                  |
+| `FnFeaturesPass`     | Function Feature extraction pass                                     |
+| `Helpers`            | Headers for Classes to store BB and Function information in passes   |
+| `Helpers/utils`      | Common helper functions utilized by both passes                    |
 
 ## User Variables
 

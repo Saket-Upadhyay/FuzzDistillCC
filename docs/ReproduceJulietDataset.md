@@ -1,4 +1,4 @@
-# Reproduce Nist Juliet 1.3 Dataset
+# Reproduce NIST Juliet 1.3 Dataset
 
 ```text
 JulietDatasetGen
