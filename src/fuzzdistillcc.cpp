@@ -53,8 +53,6 @@ static void runCustomPass(llvm::Module &targetModule) {
   PB.crossRegisterProxies(LAM, FAM, CAM, MAM);
 
   MPM.run(targetModule, MAM);
-
-
 }
 
 /**
@@ -65,7 +63,9 @@ static void runCustomPass(llvm::Module &targetModule) {
  */
 int main(int argc, char **argv) {
   commandline::HideUnrelatedOptions(FuzzPilerCategory);
-  commandline::ParseCommandLineOptions(argc, argv, "Instruments object life");
+  commandline::ParseCommandLineOptions(
+      argc, argv,
+      "FuzzDistillCC: Extracts Features for FuzzDistillML and FuzzDistillWeb");
   llvm::llvm_shutdown_obj SDO;
   std::string errorMessage;
   llvm::raw_string_ostream errorStream(errorMessage);
@@ -84,7 +84,6 @@ int main(int argc, char **argv) {
 
   llvm::errs() << "\n\n";
 
-  // Send the module to the runInstrumentPass function to be instrumented.
   runCustomPass(*aModule);
 
   if (verifyModule(*aModule, &errorStream)) {

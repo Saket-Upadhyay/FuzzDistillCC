@@ -4,6 +4,11 @@ set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Are we using FuzzDistillCC to generate a dataset?
+set(ISNISTTRAINING 0)
+# Generate Feature CSVs with (1) or without (0) header
+set(WRITEHEADERS 1)
+
 find_package(PkgConfig REQUIRED)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${LLVM_DIR}")
@@ -24,6 +29,12 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 if (NOT LLVM_ENABLE_RTTI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 endif ()
+
+# Generate Feature CSVs with (1) or without (0) header
+add_definitions(-DWRITEHEADER=${WRITEHEADERS})
+
+# Are we using FuzzDistillCC to generate a dataset?
+add_definitions(-DISNISTTRAININGSET=${ISNISTTRAINING})
 
 list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 include(AddLLVM)

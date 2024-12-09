@@ -2,7 +2,10 @@
 // Created by Saket Upadhyay on 11/6/24.
 //
 
-#define ISNISTTRAININGSET true
+#ifndef ISNISTTRAININGSET
+#define ISNISTTRAININGSET false
+#endif
+
 
 #include "BBFeaturesPass.h"
 
